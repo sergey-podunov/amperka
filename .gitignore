@@ -1,0 +1,5 @@
+.htpasswd
+/modules/*_conf.js
+*.iml
+*.ipr
+.idea/
