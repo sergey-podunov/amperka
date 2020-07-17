@@ -1,4 +1,4 @@
 {
   "start": true,
-  "hyst": {"high": 0.5, "highLag": 2, "low": 0.3, "lowLag": 2}
+  "hyst": {"high": 0.45, "highLag": 2, "low": 0.3, "lowLag": 2}
 }
