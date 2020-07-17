@@ -1,0 +1,23 @@
+version: '3'
+services:
+
+  #Nginx Service
+  nginx-server:
+    image: nginx:alpine
+    container_name: nginx-server
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - app-network
+    volumes:
+      - ./www:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./log:/var/log/nginx
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
