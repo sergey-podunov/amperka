@@ -11,8 +11,7 @@ const CONFIG_PATH = external_conf.config_path;
 const CONFIG_LOGIN = external_conf.config_login;
 const CONFIG_PASS = external_conf.config_pass;
 
-const READ_CONF_INTERVAL_MS = 5000;
-const SEND_DWEET_INTERVAL_MS = 1000;
+const SEND_DWEET_INTERVAL_MS = 3000;
 const MOISTURE_CHECK_INTERVAL_MS = 200;
 
 const MOISTURE_PIN = P6;
@@ -23,13 +22,6 @@ var config = {
     start: false,
     hyst: {high: 0.5, highLag: 2, low: 0.3, lowLag: 2}
 };
-
-var config_reader = require('config_reader').connect({
-    host: CONFIG_HOST,
-    path: CONFIG_PATH,
-    login: CONFIG_LOGIN,
-    pass: CONFIG_PASS
-});
 
 var equal_functions = require('equal_functions').create();
 
@@ -97,22 +89,6 @@ function pump_off() {
 }
 
 function wifiReady() {
-    setInterval(function () {
-        config_reader.read(
-            function (config_json) {
-                if (config_json && is_changed(config.hyst, config_json.hyst)) {
-                    hyst.update(config_json.hyst);
-                    print('hyst update with: ' + config_json.hyst);
-                }
-
-                if (config_json && is_changed(config, config_json)) {
-                    config = config_json;
-                    state.change_start(config.start);
-                }
-            }
-        );
-    }, READ_CONF_INTERVAL_MS);
-
     setInterval(function () {
         var conf_for_dweet = convert_conf_to_dweet(config, 'conf_');
         dweet.send(conf_for_dweet);
