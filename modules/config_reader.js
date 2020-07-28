@@ -1,22 +1,22 @@
 var ConfigReader = function (opts) {
-    var host = opts.host
-    var port = opts.port !== undefined ? opts.port : 80;
-    var path = opts.path;
-    var method = opts.method !== undefined ? opts.method : 'GET';
+    const host = opts.host
+    const port = opts.port !== undefined ? opts.port : 80;
+    const path = opts.path;
+    const method = opts.method !== undefined ? opts.method : 'GET';
 
-    var protocol;
+    let protocol;
     if (opts.protocol !== undefined) {
         protocol = opts.protocol;
     } else {
         protocol = this._port === 443 ? 'https:' : 'http:';
     }
 
-    var headers = {};
+    let headers = {};
     if (opts.login !== undefined && opts.pass !== undefined) {
         headers['Authorization'] = this._getBasicAuth(opts.login, opts.pass);
     }
 
-    var url = {
+    let url = {
         host: host,
         port: port,
         path: path,
@@ -28,9 +28,9 @@ var ConfigReader = function (opts) {
         url.headers = headers;
     }
 
-
     this._url = url;
     this._http = require('http');
+    this._is_request_running = false;
 };
 
 ConfigReader.prototype._getBasicAuth = function (login, pass) {
@@ -39,26 +39,43 @@ ConfigReader.prototype._getBasicAuth = function (login, pass) {
 
 ConfigReader.prototype.read = function (callback) {
     try {
-        var req = this._http.request(this._url, function (res) {
-            var response = '';
+        let self = this;
+        if (!this._is_request_running) {
+            this._is_request_running = true;
+            let req = this._http.request(this._url, function (res) {
+                let response = '';
 
-            res.on('data', function (d) {
-                response += d;
+                res.on('data', function (d) {
+                    print('on data - _is_request_running = ' + self._is_request_running);
+                    if (d) {
+                        response += d;
+                    }
+                });
+
+                res.on('close', function () {
+                    print('response: \n' + response);
+                    print('on close - _is_request_running = ' + self._is_request_running);
+                    self._is_request_running = false;
+                    if (response && response.length !== 0) {
+                        let config_json = JSON.parse(response);
+                        if (config_json) {
+                            callback(config_json);
+                        } else {
+                            print('ConfigReader - can\'t parse response - ' + response)
+                        }
+                    }
+                });
             });
 
-            res.on('close', function () {
-                var config_json = JSON.parse(response);
-                callback(config_json);
+            req.on('error', (e) => {
+                print('ConfigReader - problem with request: code=' + e.code + ', message=' + e.message);
+                print('error - _is_request_running = ' + this._is_request_running);
+                this._is_request_running = false;
             });
-        });
-
-        req.on('error', (e) => {
-            print('problem with request: code=' + e.code + ', message=' + e.message);
-        });
-
-        req.end();
+            req.end();
+        }
     } catch (e) {
-        print('got exception while reading config: ' + e);
+        print('ConfigReader - got exception while reading config: ' + e);
     }
 }
 
