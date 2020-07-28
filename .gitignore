@@ -5,3 +5,4 @@
 .idea/
 nginx/log/
 snippets/
+*.stl
