@@ -46,7 +46,6 @@ ConfigReader.prototype.read = function (callback) {
                 let response = '';
 
                 res.on('data', function (d) {
-                    print('on data - _is_request_running = ' + self._is_request_running);
                     if (d) {
                         response += d;
                     }
@@ -54,7 +53,6 @@ ConfigReader.prototype.read = function (callback) {
 
                 res.on('close', function () {
                     print('response: \n' + response);
-                    print('on close - _is_request_running = ' + self._is_request_running);
                     self._is_request_running = false;
                     if (response && response.length !== 0) {
                         let config_json = JSON.parse(response);
@@ -69,7 +67,6 @@ ConfigReader.prototype.read = function (callback) {
 
             req.on('error', (e) => {
                 print('ConfigReader - problem with request: code=' + e.code + ', message=' + e.message);
-                print('error - _is_request_running = ' + this._is_request_running);
                 this._is_request_running = false;
             });
             req.end();
