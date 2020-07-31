@@ -1,13 +1,15 @@
-var SSID = 'wild_beaver';
-var PASSWORD = 'Prikolist32';
-var NAME = 'serpinar3456565';
+PrimarySerial.setup(115200);
+const external_conf = require('wifi_conf');
+
+const SSID = external_conf.wifi_ssid;
+const PASSWORD = external_conf.wifi_password;
 
 
 var _http = require('http');
 
 function getRequest() {
     var url = {
-        host: 'yandex.ru',
+        host: 'hh.ru',
         port: 443,
         path: '/',
         method: 'GET',
@@ -15,14 +17,12 @@ function getRequest() {
     };
 
     var req = _http.request(url, function (res) {
-        var response = '';
-
         res.on('data', function (d) {
-            response += d;
+            print(d);
         });
 
         res.on('close', function () {
-            print('data: ' + response);
+            print('data transfer ened');
         });
     });
 

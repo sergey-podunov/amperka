@@ -6,11 +6,6 @@ const SSID = external_conf.wifi_ssid;
 const PASSWORD = external_conf.wifi_password;
 const DWEET_NAME = external_conf.dweet_name;
 
-const CONFIG_HOST = external_conf.config_host;
-const CONFIG_PATH = external_conf.config_path;
-const CONFIG_LOGIN = external_conf.config_login;
-const CONFIG_PASS = external_conf.config_pass;
-
 const SEND_DWEET_INTERVAL_MS = 3000;
 const MOISTURE_CHECK_INTERVAL_MS = 200;
 
@@ -20,7 +15,7 @@ const WATER_LEVEL_PIN = P9;
 
 var config = {
     start: false,
-    hyst: {high: 0.5, highLag: 2, low: 0.3, lowLag: 2}
+    hyst: {high: 0.4, highLag: 2, low: 0.3, lowLag: 2}
 };
 
 var equal_functions = require('equal_functions').create();
@@ -76,7 +71,7 @@ function is_changed(conf_old, conf_new) {
 
 function pump_on() {
     print('pump on');
-    dweet.send({pump: 1});
+    dweetSend({pump: 1});
     pump_is_on = true;
     pump.turnOn();
 }
@@ -91,7 +86,7 @@ function pump_off() {
 function wifiReady() {
     setInterval(function () {
         var conf_for_dweet = convert_conf_to_dweet(config, 'conf_');
-        dweet.send(conf_for_dweet);
+        dweetSend(conf_for_dweet);
     }, SEND_DWEET_INTERVAL_MS);
 }
 
@@ -102,6 +97,8 @@ var wifi = require('@amperka/wifi').setup(function (err) {
         if (err) print(err);
 
         print('wifi ready');
+
+        LED1.write(true);
         print('Click this link', dweet.follow());
         wifiReady();
     });
@@ -127,14 +124,14 @@ hyst.on('change', function (level) {
 water_level.on('down', function () {
     is_no_water = true;
     print('water down');
-    dweet.send({water_level: 0});
+    dweetSend({water_level: 0});
     state.change_water_level('down');
 });
 
 water_level.on('up', function () {
     is_no_water = false;
     print('water up');
-    dweet.send({water_level: 1});
+    dweetSend({water_level: 1});
     state.change_water_level('up');
 });
 
@@ -149,3 +146,12 @@ state.on('change', function (new_state) {
         pump_off();
     }
 });
+
+function dweetSend(data) {
+    let ledInitialState = LED1.read();
+    LED1.write(!ledInitialState);
+
+    dweet.send(data, function () {
+        LED1.write(ledInitialState);
+    });
+}

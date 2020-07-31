@@ -1,7 +1,10 @@
 PrimarySerial.setup(115200);
 
-var SSID = 'Beeline_2G_F32234';
-var PASSWORD = 'Prikolist32';
+const external_conf = require('wifi_conf');
+
+const SSID = external_conf.wifi_ssid;
+const PASSWORD = external_conf.wifi_password;
+
 const token = '1373678092:AAF_K05pB62iPztAYGaSqe8XIuf8ssSKogU';
 
 var bot = require('@amperka/telegram').create({

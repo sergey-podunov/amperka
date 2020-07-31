@@ -1,7 +1,10 @@
 PrimarySerial.setup(115200);
 
-var SSID = 'Beeline_2G_F32234';
-var PASSWORD = 'Prikolist32';
+const external_conf = require('wifi_conf');
+
+const SSID = external_conf.wifi_ssid;
+const PASSWORD = external_conf.wifi_password;
+
 var NAME = 'serpinar3456565';
 
 var moisturePin = P6;

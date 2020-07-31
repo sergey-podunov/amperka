@@ -6,22 +6,19 @@ var Dweetio = function(name) {
 };
 
 Dweetio.prototype._request = function(query, callback) {
-  print('url: ' + this._url + '?' + query);
   this._http.get(this._url + '?' + query, function(res) {
     var d = '';
     res.on('data', function(data) {
-      print('resp data : ' + data);
       d += data;
     });
     res.on('close', function() {
-      print('close: ' + d);
       callback(d);
     });
   }).on('error', function(e) {
     print('error: ' + e.message);
   });
 
-  // request.end();
+  request.end();
 };
 
 Dweetio.prototype.send = function(data, callback) {
@@ -32,6 +29,22 @@ Dweetio.prototype.send = function(data, callback) {
   callback = callback || function() {};
   this._request(a.join('&'), callback);
 };
+
+Dweetio.prototype.sendWithLed = function(data, callback) {
+  let ledInitialState = LED1.read();
+  LED1.write(!ledInitialState);
+
+  var a = [];
+  for (var prop in data) {
+    a.push(encodeURIComponent(prop) + '=' + encodeURIComponent(data[prop]));
+  }
+  callback = callback || function() {};
+  this._request(a.join('&'), function (response) {
+    LED1.write(ledInitialState);
+    callback(response);
+  });
+};
+
 
 Dweetio.prototype.follow = function() {
   return 'https://dweet.io/follow/' + this._name;

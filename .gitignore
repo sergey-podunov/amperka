@@ -6,3 +6,5 @@
 nginx/log/
 snippets/
 *.stl
+package-lock.json
+node_modules/
