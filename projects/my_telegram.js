@@ -1,3 +1,4 @@
+const PrimarySerial = Serial3;
 PrimarySerial.setup(115200);
 
 const external_conf = require('wifi_conf');
@@ -5,9 +6,10 @@ const external_conf = require('wifi_conf');
 const SSID = external_conf.wifi_ssid;
 const PASSWORD = external_conf.wifi_password;
 
-const token = '1373678092:AAF_K05pB62iPztAYGaSqe8XIuf8ssSKogU';
+const telegram_conf = require('telegram_conf');
+const token = telegram_conf.token;
 
-var bot = require('@amperka/telegram').create({
+var bot = require('telegram').create({
     token: token,
     polling: { timeout: 10 }
 });
@@ -19,7 +21,17 @@ bot.on('text', msg => {
 });
 
 var wifi = require('@amperka/wifi').setup(function(err) {
-    wifi.connect(SSID, PASSWORD, function (err) {
+    if (err) {
+        print(err);
+        return;
+    }
+
+    wifi.connect(SSID, PASSWORD, function (err_connect) {
+        if (err) {
+            print(err_connect);
+            return;
+        }
+
         print('I\'m ready!');
         bot.connect();
     });
