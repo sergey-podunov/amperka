@@ -8,8 +8,9 @@ const DWEET_NAME = external_conf.dweet_name;
 
 const SEND_DWEET_INTERVAL_MS = 3000;
 const MOISTURE_CHECK_INTERVAL_MS = 200;
-const START_ACTIVE_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const START_ACTIVE_INTERVAL_MS = 30 * 60 * 1000;
 const ACTIVE_TIMEOUT_MS = 20 * 1000;
+const WATERING_DURATION_MS = 3 * 1000;
 
 const MOISTURE_PIN = P6;
 const MOISTURE_POWER_PIN = A4;
@@ -17,9 +18,16 @@ const MOISTURE_POWER_PIN = A4;
 const PUMP_PIN = P11;
 const WATER_LEVEL_PIN = P9;
 
+/*
 var config = {
     start: true,
     hyst: {high: 0.4, highLag: 2, low: 0.3, lowLag: 2}
+};
+*/
+
+var config = {
+    start: true,
+    hyst: {high: 0.2, highLag: 2, low: 0.05, lowLag: 2}
 };
 
 function getMoisture() {
@@ -81,13 +89,19 @@ function pump_on() {
     dweetSend({pump: 1});
     pump_is_on = true;
     pump.turnOn();
+
+    setTimeout(function () {
+        pump_off();
+    }, WATERING_DURATION_MS);
 }
 
 function pump_off() {
-    print('pump off');
-    dweet.send({pump: 0});
-    pump_is_on = false;
-    pump.turnOff();
+    if (pump_is_on) {
+        print('pump off');
+        dweetSend({pump: 0});
+        pump_is_on = false;
+        pump.turnOff();
+    }
 }
 
 function wifi_ready_callback() {
