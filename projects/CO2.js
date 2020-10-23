@@ -4,34 +4,36 @@ const BUTTON_PIN = P7;
 
 SPI2.setup({baud: 9600, mosi: B15, miso: B14, sck: B13});
 let quadDisplay = require('@amperka/quaddisplay2').connect({spi: SPI2, cs: P9});
+var co2Display = require('CO2_display');
+var display = co2Display.create(quadDisplay);
+const DISPLAY_STATE = co2Display.STATE;
 
-var blinkId;
+let blinkId;
 
 var val = '----';
-quadDisplay.display(val, true);
+display.update_PPM(val);
 
 const conf = require('co2_conf');
 
 var button = require('@amperka/button').connect(BUTTON_PIN, {});
 let voltage_interval_id;
-var show_voltage = false;
 
 function showVoltage() {
   var voltage_percent = Math.round(analogRead(A2) * 100);
-  quadDisplay.display('V' + voltage_percent, true);
+  display.update_voltage(voltage_percent);
   console.log("voltage = " + voltage_percent);
 }
 
 button.on('press', function() {
-  show_voltage = true;
+  display.set_state(DISPLAY_STATE.VOLTAGE);
   showVoltage();
   voltage_interval_id = setInterval(showVoltage, VOLTAGE_READ_TIMEOUT_SEC * 1000);
 });
 
 button.on('release', function() {
   clearInterval(voltage_interval_id);
-  quadDisplay.display(val, true);
-  show_voltage = false;
+  display.set_state(DISPLAY_STATE.PPM);
+  display.update_PPM(val);
 });
 
 var gasSensor = require('@amperka/gas-sensor').connect({
@@ -43,11 +45,11 @@ var gasSensor = require('@amperka/gas-sensor').connect({
 
 function displayPreheat() {
   var dot = true;
-  blinkId = setInterval(function () {
+  setInterval(function () {
     if (dot) {
-      quadDisplay.display(val + '.', true);
+      display.update_PPM(val + '.');
     } else {
-      quadDisplay.display(val, true);
+      display.update_PPM(val);
     }
     dot = !dot;
   }, 1000);
@@ -55,7 +57,7 @@ function displayPreheat() {
 
 function displayHeated() {
   clearInterval(blinkId);
-  quadDisplay.display(val, true);
+  display.update_PPM(val);
 }
 
 function readAndShow() {
@@ -68,9 +70,7 @@ function readAndShow() {
     setInterval(function () {
       val = Math.round(gasSensor.read('CO2'));
       print('CO2 PPM = ', val);
-      if (!show_voltage) {
-        quadDisplay.display(val, true);
-      }
+      display.update_PPM(val);
     }, READ_INTERVAL_SEC * 1000);
   });
 }
