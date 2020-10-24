@@ -32,6 +32,7 @@ CO2_display.prototype.update_PPM = function (ppmVal) {
 
 CO2_display.prototype.set_state = function (state) {
     this._state = state;
+    this._update_display();
 }
 
 exports.create = function (quadDisplay) {
