@@ -21,6 +21,8 @@ function blink(pin, timeSec) {
 }
 
 var SettingsState = function (ops) {
+    self = this;
+
     //todo control options borders
     this._currentSettingIndex = 0;
 
@@ -42,27 +44,30 @@ var SettingsState = function (ops) {
         this._currentValuesIndexes[i] = 0;
     }
 
-        /*    this._linkedListInterval = require('circular-list').create();
-            ops.intervals.forEach(element => self._linkedListInterval.insertBack(element));*/
     this._state = _fillState(this._settings, this._currentValuesIndexes, this._settingsSize);
-/*
-    for (var i = 0; i < this._settingsSize; i++) {
-        this._state[this._settings[i].name] = this._settings[i].values[this._currentValuesIndexes[i]];
-    }
-*/
 
     this.mode = MODE.READ;
     this.controlBlinkId = null;
 
     this.controlPins[this._currentSettingIndex].write(HIGH);
     this.infoPins[this._currentValuesIndexes[this._currentSettingIndex]].write(HIGH);
-}
 
-/*function blink(pin, timeSec) {
-    console.log('blink');
-    pin.writeAtTime(HIGH, timeSec * 1000);
-    return null;
-}*/
+    pinMode(ops.buttonPin, 'input_pullup');
+
+    this.button = require('@amperka/button').connect(ops.buttonPin, {holdTime: 0.5});
+
+    this.button.on('click', function() {
+        if (self.mode === MODE.READ) {
+            self.nextSetting();
+        } else {
+            self.nextValue();
+        }
+    });
+
+    this.button.on('hold', function() {
+        self.changeMode();
+    });
+}
 
 SettingsState.prototype.changeMode = function () {
     if (this.mode === MODE.READ) {
@@ -76,9 +81,6 @@ SettingsState.prototype.changeMode = function () {
 
         this.infoPins[this._currentValuesIndexes[this._currentSettingIndex]].write(HIGH);
         this._state = _fillState(this._settings, this._currentValuesIndexes, this._settingsSize);
-        for(var state_key in this._state) {
-            console.log(state_key + ': ' + this._state[state_key]);
-        }
 
         this.emit('change', this._state);
     }
@@ -104,7 +106,6 @@ SettingsState.prototype.nextSetting = function () {
 }
 
 SettingsState.prototype.nextValue = function () {
-    console.log('nextValue');
     if (this.mode === MODE.WRITE) {
         console.log('nextValue - mode write');
         clearInterval(this.controlBlinkId);
