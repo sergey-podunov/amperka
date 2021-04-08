@@ -33,13 +33,8 @@ function _val_x() {
 var SettingsState = function (ops) {
     self = this;
 
-    this._menuButtonPin = ops.menuButtonPin;
-    this._setButtonPin = ops.setButtonPin;
-    pinMode(this._menuButtonPin, 'input_pullup');
-    pinMode(this._setButtonPin, 'input_pullup');
-
-    this._menuButton = require('@amperka/button').connect(this._menuButtonPin, {holdTime: 0.5});
-    this._setButton = require('@amperka/button').connect(this._setButtonPin, {holdTime: 0.5});
+    this._menuButton = ops.menuButton;
+    this._setButton = ops.setButton;
 
     this._backLightPin = ops.LED.backLightPin;
     this._dcPin = ops.LED.dcPin;
