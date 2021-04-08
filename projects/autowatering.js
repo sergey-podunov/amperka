@@ -7,42 +7,84 @@ const PASSWORD = external_conf.wifi_password;
 const DWEET_NAME = external_conf.dweet_name;
 
 const SEND_DWEET_INTERVAL_MS = 3000;
-const MOISTURE_CHECK_INTERVAL_MS = 200;
-const START_ACTIVE_INTERVAL_MS = 30 * 60 * 1000;
-const ACTIVE_TIMEOUT_MS = 20 * 1000;
 const WATERING_DURATION_MS = 3 * 1000;
-
-const MOISTURE_PIN = P6;
-const MOISTURE_POWER_PIN = A4;
 
 const PUMP_PIN = P11;
 const WATER_LEVEL_PIN = P9;
 
-/*
-var config = {
-    start: true,
-    hyst: {high: 0.4, highLag: 2, low: 0.3, lowLag: 2}
+const MENU_BUTTON_PIN = P12;
+const SET_BUTTON_PIN = P13;
+
+pinMode(MENU_BUTTON_PIN, 'input_pullup');
+pinMode(SET_BUTTON_PIN, 'input_pullup');
+
+var menuButton = require('@amperka/button').connect(MENU_BUTTON_PIN, {holdTime: 0.5});
+var setButton = require('@amperka/button').connect(SET_BUTTON_PIN, {holdTime: 0.5});
+
+const SETTINGS_MAP = {
+    "vol": {
+        "LOW": 5 * 1000,
+        "HIGH": 10 * 1000
+    },
+    "tmr": {
+        "LOW": 10 * 1000,
+        "HIGH": 20 * 1000
+    }
 };
-*/
+
+var settingsState = require('settings_state_led').create({
+    menuButton: menuButton,
+    setButton: setButton,
+    LED: {
+        backLightPin: P6,
+        dcPin: P7,
+        csPin: P3,
+        rstPin: P2,
+    },
+    settings: {
+        "vol" : {
+            values: ["LOW", "HIGH"]
+        },
+        "tmr": {
+            values: ["LOW", "HIGH"]
+        }
+    },
+});
+
+function fillSettings(changedSettings) {
+    var settings = {};
+    for(var settings_key in changedSettings) {
+        settings[settings_key] = SETTINGS_MAP[settings_key][changedSettings[settings_key]]
+        console.log(settings_key + ': ' + SETTINGS_MAP[settings_key][changedSettings[settings_key]]);
+    }
+    return settings;
+}
+
+var currentSettings = fillSettings(settingsState.state());
+
+settingsState.on('change', function (changedSettings) {
+    var oldSettings = currentSettings;
+    currentSettings = fillSettings(changedSettings);
+
+    if (oldSettings != null
+        && oldSettings.hasOwnProperty("tmr")
+        && oldSettings["tmr"] !== currentSettings["tmr"]) {
+          clearInterval(mainIntervalId);
+          mainIntervalId = setInterval(main_cycle, currentSettings["tmr"]);
+    }
+});
 
 var config = {
     start: true,
     hyst: {high: 0.2, highLag: 2, low: 0.05, lowLag: 2}
 };
 
-function getMoisture() {
-    analogWrite(MOISTURE_POWER_PIN, 1);
-    let moisture = analogRead(MOISTURE_PIN);
-    analogWrite(MOISTURE_POWER_PIN, 0);
-    return moisture;
-}
+var mainTimeoutId = null;
+var mainIntervalId = null;
 
 var wifi_ready = false;
 
 var dweet = require('@amperka/dweetio').connect(DWEET_NAME);
-
-var hyst_moisture = require('hysteresis').create(config.hyst);
-var is_moisture_level_low = getMoisture() <= config.hyst.low;
 
 var pump = require('@amperka/power-control').connect(PUMP_PIN);
 pump.turnOff();
@@ -52,7 +94,7 @@ var water_level = require('@amperka/water-level').connect(WATER_LEVEL_PIN);
 var is_no_water = water_level.read() !== 'up';
 
 var state = require('autowatering_state').create(
-    { start: config.start, no_water: is_no_water, moisture_low: is_moisture_level_low }
+    { start: config.start, no_water: is_no_water }
     );
 
 function convert_conf_to_dweet(conf, prefix) {
@@ -78,8 +120,6 @@ function convert_conf_to_dweet(conf, prefix) {
     conf_for_dweet.is_no_water = is_no_water;
     conf_for_dweet.water_level = water_level.read() === 'up' ? 1 : 0;
     conf_for_dweet.pump = pump_is_on ? 1 : 0;
-    conf_for_dweet.moisture = getMoisture();
-    conf_for_dweet.moisture_low = is_moisture_level_low ? 1 : 0;
 
     return conf_for_dweet;
 }
@@ -92,7 +132,7 @@ function pump_on() {
 
     setTimeout(function () {
         pump_off();
-    }, WATERING_DURATION_MS);
+    }, currentSettings["vol"]);
 }
 
 function pump_off() {
@@ -111,7 +151,7 @@ function wifi_ready_callback() {
     }, SEND_DWEET_INTERVAL_MS);
 }
 
-var wifi = require('@amperka/wifi').setup(function (err) {
+/*var wifi = require('@amperka/wifi').setup(function (err) {
     if (err) print(err);
 
     wifi.connect(SSID, PASSWORD, function (err) {
@@ -130,28 +170,7 @@ var wifi = require('@amperka/wifi').setup(function (err) {
 
         wifi_ready_callback();
     });
-});
-
-setInterval(function() {
-    if (state.is_active()) {
-        var moisture = getMoisture();
-        hyst_moisture.push(moisture);
-        print("hyst_moisture.state " + hyst_moisture._state, ", hyst_moisture.stable " + hyst_moisture._stable,
-            "moisture " + moisture);
-    }
-}, MOISTURE_CHECK_INTERVAL_MS);
-
-
-hyst_moisture.on('change', function (level) {
-    if (state.is_active()) {
-        print('hyst change - state: ' + level);
-        state.change_moisture_level(level);
-    }
-});
-
-hyst_moisture.on('change', function (level) {
-    is_moisture_level_low = level === 'low';
-});
+});*/
 
 water_level.on('down', function () {
     is_no_water = true;
@@ -169,12 +188,12 @@ water_level.on('up', function () {
 
 state.on('change', function (new_state) {
     print('change state: ' + JSON.stringify(new_state));
-    if (new_state.active && new_state.start && !new_state.no_water && new_state.moisture_low) {
+    if (new_state.active && new_state.start && !new_state.no_water) {
         pump_on();
         return;
     }
 
-    if (!new_state.active || !new_state.start || new_state.no_water || !new_state.moisture_low) {
+    if (!new_state.active || !new_state.start || new_state.no_water) {
         if (new_state.active && pump_is_on) {
             state._active = false;
         }
@@ -198,12 +217,12 @@ function main_cycle() {
     print('change_active = true');
     state.change_active(true);
 
-    setTimeout(function() {
+    mainTimeoutId = setTimeout(function() {
         print('change_active = false');
         state.change_active(false);
-    }, ACTIVE_TIMEOUT_MS);
+    }, currentSettings["vol"] * 2);
 }
 
 main_cycle();
 
-setInterval(main_cycle, START_ACTIVE_INTERVAL_MS);
+mainIntervalId = setInterval(main_cycle, currentSettings["tmr"]);
