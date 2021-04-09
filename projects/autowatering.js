@@ -76,6 +76,7 @@ var mainIntervalId = null;
 var pump = require('@amperka/power-control').connect(PUMP_PIN);
 pump.turnOff();
 var pump_is_on = false;
+var manualPumpOn = false;
 
 var water_level = require('@amperka/water-level').connect(WATER_LEVEL_PIN);
 var is_no_water = water_level.read() !== 'up';
@@ -85,17 +86,19 @@ var state = require('autowatering_state').create(
     );
 
 function pump_on() {
-    print('pump on');
-    pump_is_on = true;
-    pump.turnOn();
+    if (!manualPumpOn) {
+        print('pump on');
+        pump_is_on = true;
+        pump.turnOn();
 
-    setTimeout(function () {
-        pump_off();
-    }, currentSettings["vol"]);
+        setTimeout(function () {
+            pump_off();
+        }, currentSettings["vol"]);
+    }
 }
 
 function pump_off() {
-    if (pump_is_on) {
+    if (!manualPumpOn && pump_is_on) {
         print('pump off');
         pump_is_on = false;
         pump.turnOff();
@@ -127,6 +130,20 @@ state.on('change', function (new_state) {
         }
 
         pump_off();
+    }
+});
+
+setButton.on('hold', function () {
+    if (settingsState.mode != 1) {
+        manualPumpOn = true;
+        pump.turnOn();
+    }
+});
+
+setButton.on('release', function () {
+    if (settingsState.mode != 1 && manualPumpOn) {
+        manualPumpOn = false;
+        pump.turnOff();
     }
 });
 
