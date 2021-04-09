@@ -7,7 +7,6 @@ const PASSWORD = external_conf.wifi_password;
 const DWEET_NAME = external_conf.dweet_name;
 
 const SEND_DWEET_INTERVAL_MS = 3000;
-const WATERING_DURATION_MS = 3 * 1000;
 
 const PUMP_PIN = P11;
 const WATER_LEVEL_PIN = P9;
@@ -27,8 +26,8 @@ const SETTINGS_MAP = {
         "HIGH": 10 * 1000
     },
     "tmr": {
-        "LOW": 10 * 1000,
-        "HIGH": 20 * 1000
+        "LOW": 30 * 1000,
+        "HIGH": 60 * 1000
     }
 };
 
