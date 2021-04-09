@@ -1,13 +1,5 @@
 PrimarySerial.setup(115200);
 
-const external_conf = require('autowatering_conf');
-
-const SSID = external_conf.wifi_ssid;
-const PASSWORD = external_conf.wifi_password;
-const DWEET_NAME = external_conf.dweet_name;
-
-const SEND_DWEET_INTERVAL_MS = 3000;
-
 const PUMP_PIN = P11;
 const WATER_LEVEL_PIN = P9;
 
@@ -81,10 +73,6 @@ var config = {
 var mainTimeoutId = null;
 var mainIntervalId = null;
 
-var wifi_ready = false;
-
-var dweet = require('@amperka/dweetio').connect(DWEET_NAME);
-
 var pump = require('@amperka/power-control').connect(PUMP_PIN);
 pump.turnOff();
 var pump_is_on = false;
@@ -96,36 +84,8 @@ var state = require('autowatering_state').create(
     { start: config.start, no_water: is_no_water }
     );
 
-function convert_conf_to_dweet(conf, prefix) {
-    var conf_for_dweet = {};
-    for (var conf_key in conf) {
-        if (conf.hasOwnProperty(conf_key)) {
-            var dweet_key = prefix + conf_key;
-            switch (typeof (conf[conf_key])) {
-                case 'object':
-                    var obj_for_dweet = convert_conf_to_dweet(conf[conf_key], prefix + conf_key + '_');
-                    for (var obj_key in obj_for_dweet) {
-                        conf_for_dweet[obj_key] = obj_for_dweet[obj_key];
-                    }
-                    break;
-                case 'function':
-                    break;
-                default:
-                    conf_for_dweet[dweet_key] = conf[conf_key];
-            }
-        }
-    }
-    conf_for_dweet.is_able_to_work = config.start && !is_no_water;
-    conf_for_dweet.is_no_water = is_no_water;
-    conf_for_dweet.water_level = water_level.read() === 'up' ? 1 : 0;
-    conf_for_dweet.pump = pump_is_on ? 1 : 0;
-
-    return conf_for_dweet;
-}
-
 function pump_on() {
     print('pump on');
-    dweetSend({pump: 1});
     pump_is_on = true;
     pump.turnOn();
 
@@ -137,51 +97,20 @@ function pump_on() {
 function pump_off() {
     if (pump_is_on) {
         print('pump off');
-        dweetSend({pump: 0});
         pump_is_on = false;
         pump.turnOff();
     }
 }
 
-function wifi_ready_callback() {
-    setInterval(function () {
-        var conf_for_dweet = convert_conf_to_dweet(config, 'conf_');
-        dweetSend(conf_for_dweet);
-    }, SEND_DWEET_INTERVAL_MS);
-}
-
-/*var wifi = require('@amperka/wifi').setup(function (err) {
-    if (err) print(err);
-
-    wifi.connect(SSID, PASSWORD, function (err) {
-        if (err) {
-            print(err);
-        } else {
-            wifi_ready = true;
-        }
-
-        if (wifi_ready) {
-            print('wifi ready');
-            print('Click this link', dweet.follow());
-        }
-
-        LED1.write(true);
-
-        wifi_ready_callback();
-    });
-});*/
-
 water_level.on('down', function () {
     is_no_water = true;
     print('water down');
-    dweetSend({water_level: 0});
     state.change_water_level('down');
 });
 
 water_level.on('up', function () {
     is_no_water = false;
     print('water up');
-    dweetSend({water_level: 1});
     state.change_water_level('up');
 });
 
@@ -200,17 +129,6 @@ state.on('change', function (new_state) {
         pump_off();
     }
 });
-
-function dweetSend(data) {
-    if (wifi_ready) {
-        let ledInitialState = LED1.read();
-        LED1.write(!ledInitialState);
-
-        dweet.send(data, function () {
-            LED1.write(ledInitialState);
-        });
-    }
-}
 
 function main_cycle() {
     print('change_active = true');
