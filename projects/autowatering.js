@@ -1,10 +1,10 @@
-PrimarySerial.setup(115200);
+setBusyIndicator(LED1);
 
-const PUMP_PIN = P11;
-const WATER_LEVEL_PIN = P9;
+const PUMP_PIN = A4;
+const WATER_LEVEL_PIN = A0;
 
-const MENU_BUTTON_PIN = P12;
-const SET_BUTTON_PIN = P13;
+const MENU_BUTTON_PIN = A7;
+const SET_BUTTON_PIN = A6;
 
 pinMode(MENU_BUTTON_PIN, 'input_pullup');
 pinMode(SET_BUTTON_PIN, 'input_pullup');
@@ -14,12 +14,12 @@ var setButton = require('@amperka/button').connect(SET_BUTTON_PIN, {holdTime: 0.
 
 const SETTINGS_MAP = {
     "vol": {
-        "LOW": 5 * 1000,
+        "LOW": 10 * 1000,
         "HIGH": 10 * 1000
     },
     "tmr": {
-        "LOW": 30 * 1000,
-        "HIGH": 60 * 1000
+        "LOW":  60 * 1000,
+        "HIGH": 60 * 60 * 1000
     }
 };
 
@@ -27,10 +27,10 @@ var settingsState = require('settings_state_led').create({
     menuButton: menuButton,
     setButton: setButton,
     LED: {
-        backLightPin: P6,
-        dcPin: P7,
-        csPin: P3,
-        rstPin: P2,
+        backLightPin: B4,
+        dcPin: B3,
+        csPin: B5,
+        rstPin: B10,
     },
     settings: {
         "vol" : {
@@ -156,7 +156,5 @@ function main_cycle() {
         state.change_active(false);
     }, currentSettings["vol"] * 2);
 }
-
-main_cycle();
 
 mainIntervalId = setInterval(main_cycle, currentSettings["tmr"]);

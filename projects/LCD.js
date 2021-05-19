@@ -24,12 +24,13 @@ var firstLineY = 30;
 var secondLineY = firstLineY + FONT_SIZE + LINE_MARGIN;
 
 var colorPalette = new Uint16Array([0, 0xF80F, 0x001F, 0xF800, 0xFFFF]);
-var spi = new SPI();
-spi.setup({baud:3200000, mosi:B15, sck:B13, miso:B14});
-
+// var spi = new SPI();
+// spi.setup({baud:3200000, mosi:B15, sck:B13, miso:B14});
+SPI2.setup({baud:5600, mosi:B15, sck:B13, miso:B14});
+// SPI2.setup();
 var g = require("ST7735").connect({
     palette:colorPalette,
-    spi:spi,
+    spi:SPI2,
     dc:P7,
     cs:P3,
     rst:P2,

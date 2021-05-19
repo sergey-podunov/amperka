@@ -81,12 +81,10 @@ var SettingsState = function (ops) {
 
     this._backLightPin.set();
 
-    var spi = new SPI();
-    spi.setup({baud:3200000, mosi:B15, sck:B13, miso:B14});
-
+    SPI2.setup({baud:3200000, mosi:B15, sck:B13, miso:B14});
     this._graphics = require("ST7735").connect({
         palette:COLOR_PALETTE,
-        spi:spi,
+        spi:SPI2,
         dc:this._dcPin,
         cs:this._csPin,
         rst:this._rstPin,
