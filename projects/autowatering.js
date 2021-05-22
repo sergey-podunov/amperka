@@ -69,8 +69,7 @@ settingsState.on('change', function (changedSettings) {
 });
 
 var config = {
-    start: true,
-    hyst: {high: 0.2, highLag: 2, low: 0.05, lowLag: 2}
+    start: true
 };
 
 var mainTimeoutId = null;
