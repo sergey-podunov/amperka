@@ -81,7 +81,7 @@ pump.turnOff();
 var pump_is_on = false;
 var manualPumpOn = false;
 
-var water_level = require('@amperka/water-level').connect(WATER_LEVEL_PIN);
+var water_level = require('@amperka/water-level').connect(WATER_LEVEL_PIN, {debounce: 0.5}); //sec
 var is_no_water = water_level.read() !== 'up';
 
 var state = require('autowatering_state').create(
