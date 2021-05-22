@@ -37,6 +37,7 @@ var SettingsState = function (ops) {
     this._setButton = ops.setButton;
 
     this._backLightPin = ops.LED.backLightPin;
+    this._SPI = ops.LED.SPI;
     this._dcPin = ops.LED.dcPin;
     this._csPin = ops.LED.csPin;
     this._rstPin = ops.LED.rstPin;
@@ -81,10 +82,10 @@ var SettingsState = function (ops) {
 
     this._backLightPin.set();
 
-    SPI2.setup({baud:3200000, mosi:B15, sck:B13, miso:B14});
+
     this._graphics = require("ST7735").connect({
         palette:COLOR_PALETTE,
-        spi:SPI2,
+        spi:this._SPI,
         dc:this._dcPin,
         cs:this._csPin,
         rst:this._rstPin,

@@ -23,10 +23,13 @@ const SETTINGS_MAP = {
     }
 };
 
+SPI2.setup({baud:3200000, mosi:B15, sck:B13, miso:B14});
+
 var settingsState = require('settings_state_led').create({
     menuButton: menuButton,
     setButton: setButton,
     LED: {
+        SPI: SPI2,
         backLightPin: B4,
         dcPin: B3,
         csPin: B5,
